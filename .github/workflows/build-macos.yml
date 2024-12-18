@@ -1,0 +1,49 @@
+name: Build macOS Binary
+
+on:
+  push:
+    branches: [ master ]
+  # 也可以手动触发
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+    - name: Checkout shoes repository
+      uses: actions/checkout@v4
+      with:
+        repository: cfal/shoes
+        ref: v0.1.3
+        
+    - name: Install Rust toolchain
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: aarch64-apple-darwin
+        profile: minimal
+        override: true
+    
+    # 添加cargo缓存
+    - uses: Swatinem/rust-cache@v2
+      
+    - name: Build Release Binary
+      run: |
+        cargo build --release --target aarch64-apple-darwin
+        
+    # 创建构建产物目录
+    - name: Prepare artifacts
+      run: |
+        mkdir -p artifacts
+        cp target/aarch64-apple-darwin/release/shoes artifacts/shoes-v0.1.3-aarch64-apple-darwin
+        
+    # 上传构建产物
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: shoes-macos-m1
+        path: artifacts/shoes-v0.1.3-aarch64-apple-darwin
